@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dink Daily</title>
+<style>
+:root{--bg:#f6f7f2;--card:#fff;--tx:#1b2418;--mu:#6b7566;--ac:#2f8f3a;--ac2:#e8f4e5;--warn:#f08a1c;--bd:#e2e5dc;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121510;--card:#1c211a;--tx:#eef2ea;--mu:#9aa595;--ac:#58c264;--ac2:#243322;--bd:#2c3329}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0}h2{font-size:18px;margin:20px 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.mu{color:var(--mu);font-size:14px}
+.hero{display:flex;gap:12px}.hero .card{flex:1;text-align:center;margin:0}
+.big{font-size:30px;font-weight:700}
+.bar{height:8px;background:var(--ac2);border-radius:99px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
+.week{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.dot{width:30px;height:30px;border-radius:50%;background:var(--ac2);display:grid;place-items:center;font-size:12px;color:var(--mu)}
+.dot.on{background:var(--ac);color:#fff}.dot.today{outline:2px solid var(--warn)}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;background:var(--ac);color:#fff;font-weight:600}
+button.ghost{background:var(--ac2);color:var(--ac)}
+button:disabled{opacity:.5}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--bd)}
+.item:last-child{border:0}
+.item input{width:22px;height:22px;margin-top:2px;accent-color:var(--ac)}
+.item.done b{text-decoration:line-through;color:var(--mu)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{padding:6px 12px;border-radius:99px;background:var(--ac2);color:var(--ac);font-size:14px;font-weight:600;cursor:pointer;border:0}
+.chip.on{background:var(--ac);color:#fff}
+.tag{font-size:12px;background:var(--ac2);color:var(--ac);padding:2px 8px;border-radius:99px;font-weight:600}
+textarea,select{width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+textarea{min-height:64px;resize:vertical}
+label{display:block;font-weight:600;margin:12px 0 4px}
+.stars button{background:none;color:var(--bd);font-size:32px;padding:0 4px}.stars button.on{color:var(--warn)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;color:var(--mu);border-radius:0;padding:12px 0;font-size:13px}
+nav button.on{color:var(--ac)}nav span{display:block;font-size:22px}
+.badge{display:inline-block;margin:4px;padding:6px 10px;border-radius:10px;background:var(--ac2);font-size:14px}.badge.off{opacity:.35;filter:grayscale(1)}
+.toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;padding:10px 18px;border-radius:99px;font-weight:600;z-index:9}
+details summary{cursor:pointer;color:var(--ac);font-weight:600;font-size:14px;margin-top:6px}
+</style></head><body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const key=d=>{const x=d||new Date();return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+let S={days:{},logs:[]};
+try{S=JSON.parse(localStorage.getItem('dinkdaily'))||S}catch(e){}
+const save=()=>{try{localStorage.setItem('dinkdaily',JSON.stringify(S))}catch(e){}};
+
+// ---- Content ----
+const WARM=[["Easy march + arm circles","2 min","Raise heart rate gently."],["Hip openers & leg swings","2 min","10 each leg, front and side."],["Ankle & calf rocks","1 min","Calves and Achilles are the 50+ injury hotspots."]];
+const COOL=[["Calf & Achilles stretch","2 min","30 sec each side, no bouncing."],["Hip flexor + hamstring stretch","2 min","30 sec each side."],["Shoulder & forearm stretch","1 min","Protects elbow and shoulder."]];
+const MAIN=[
+ {name:"Legs & Balance",items:[["Split squats","3x8 each","Slow down, knee tracks over toes."],["Single-leg balance reach","2x8 each","Touch the floor in front, return."],["Lateral band walks / side steps","2x10 each way","Stay low in ready position."],["Calf raises (slow)","2x12","3 sec lowering."]]},
+ {name:"Core & Shoulders",items:[["Dead bug","3x8 each","Low back stays flat."],["Side plank","2x25 sec each","Stack hips."],["Band external rotation","2x12 each","Rotator cuff insurance."],["Bird dog","2x8 each","Pause 2 sec."]]},
+ {name:"Mobility & Agility",items:[["World's greatest stretch","2x5 each","Hips + thoracic spine."],["Split-step hops","3x10","Soft landings, quiet feet."],["Lateral shuffle & stop","3x6 each","Decelerate under control."],["Wrist & forearm curls (light)","2x15","Helps prevent tennis/pickle elbow."]]}];
+const DRILLS=[
+ {id:"w1",cat:"Wall",name:"Dink Wall Rally",t:"3 min",d:"Stand 7 ft from a wall, tape a line 34 in high. Dink softly above the line, keep the ball low and controlled.",tip:"Goal: 30 in a row. Stay in a split-step stance."},
+ {id:"w2",cat:"Wall",name:"Volley Reflex Wall",t:"3 min",d:"Stand 6 ft from the wall. Continuous blocks with a compact punch, paddle in front.",tip:"No backswing. Count your best streak."},
+ {id:"w3",cat:"Wall",name:"Backhand Only Wall",t:"3 min",d:"Hit only backhand dinks and drives against the wall.",tip:"Lead with the elbow-in, firm wrist."},
+ {id:"w4",cat:"Wall",name:"Target Tape Drill",t:"4 min",d:"Put a small tape target on the wall. Hit 10 to the target, move the target left/right.",tip:"Accuracy before pace."},
+ {id:"f1",cat:"Footwork",name:"Split-Step & Shuffle",t:"3 min",d:"Split-step, shuffle 3 steps to a cone, split-step, return. 6 rounds each direction.",tip:"Never cross your feet."},
+ {id:"f2",cat:"Footwork",name:"Kitchen Approach Ladder",t:"4 min",d:"From baseline, walk up in 3 stages (baseline, mid, kitchen), split-stepping at each stop.",tip:"Stop on balance, not on the move."},
+ {id:"f3",cat:"Footwork",name:"Cone Figure-8",t:"3 min",d:"Two cones 8 ft apart. Shuffle around in a figure-8 staying low, paddle up.",tip:"Quiet feet = good balance."},
+ {id:"f4",cat:"Footwork",name:"Reset Retreat",t:"3 min",d:"At the kitchen, backpedal-shuffle to mid-court as if lobbed, then recover forward.",tip:"Turn the hips, don't back-peddle straight."},
+ {id:"p1",cat:"2-Person",name:"Cross-Court Dink Battle",t:"5 min",d:"Both dink cross-court. Alternate: first to miss starts again. Add a speed-up every 10th ball.",tip:"Keep the ball below the net-tape height."},
+ {id:"p2",cat:"2-Person",name:"3rd-Shot Drop Practice",t:"6 min",d:"One player drops from baseline, partner stays at kitchen. 10 drops, then switch. Score only drops landing in the kitchen.",tip:"Aim for 7 out of 10."},
+ {id:"p3",cat:"2-Person",name:"Dink-Dink-Attack",t:"5 min",d:"Rally dinks; when someone pops one up (or on the 5th ball) the partner attacks to the feet, then reset.",tip:"Practice shot selection: attack only high balls."},
+ {id:"p4",cat:"2-Person",name:"Speed-Up & Block",t:"5 min",d:"One at the kitchen, one at the line. Attacker speeds up to the body; defender blocks soft into the kitchen.",tip:"Soft hands and absorb pace."},
+ {id:"p5",cat:"2-Person",name:"Lob & Recover",t:"5 min",d:"Partner lobs deep over you; run back, hit a lob or drop, then recover to the kitchen.",tip:"Call 'mine/yours' early."}
+];
+const CATS=["All","Wall","Footwork","2-Person"];
+const BADGES=[["🔥","3-day streak",s=>s.streak>=3],["⚡","7-day streak",s=>s.streak>=7],["🏆","21-day streak",s=>s.streak>=21],["🥇","Best 30+",s=>s.best>=30],["📝","First log",s=>S.logs.length>=1],["🎯","10 sessions",s=>s.active>=10],["🥒","25 sessions",s=>s.active>=25],["🚀","Level 5",s=>s.level>=5]];
+
+// ---- State helpers ----
+const day=k=>S.days[k]||(S.days[k]={r:{},dr:[]});
+const isActive=k=>{const d=S.days[k];return d&&(d.done||d.dr.length||d.log)};
+const prev=(n)=>{const d=new Date();d.setDate(d.getDate()-n);return key(d)};
+function stats(){
+ let streak=0,gap=0;
+ for(let i=0;i<400;i++){
+  if(isActive(prev(i))){streak++;gap=0}
+  else if(i===0)continue;
+  else{gap++;if(gap>1)break}
+ }
+ const keys=Object.keys(S.days).filter(isActive).sort();
+ let best=0,run=0,last=null;
+ for(const k of keys){const d=new Date(k+'T12:00');if(last&&(d-last)/864e5<=2)run++;else run=1;best=Math.max(best,run);last=d}
+ const xp=keys.reduce((a,k)=>a+(S.days[k].xp||0),0)+S.logs.length*15;
+ const level=Math.floor(xp/150)+1;
+ return{streak,best,active:keys.length,xp,level,into:xp%150};
+}
+function award(n,msg){day(key()).xp=(day(key()).xp||0)+n;save();toast(msg||'+'+n+' XP')}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),1800)}
+const focus=()=>MAIN[Math.floor(new Date().getTime()/864e5)%3];
+
+// ---- Views ----
+let tab='today',cat='All',lg={type:'Game',rating:0};
+function render(){
+ $('#nav').innerHTML=[['today','🏠','Today'],['drills','🎾','Drills'],['log','📝','Log'],['me','🏅','Progress']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
+ $('#app').innerHTML={today:vToday,drills:vDrills,log:vLog,me:vMe}[tab]();
+}
+window.go=t=>{tab=t;render();scrollTo(0,0)};
+
+function vToday(){
+ const s=stats(),k=key(),d=day(k),f=focus();
+ const secs=[["Warm-up · 5 min",WARM,'w'],[f.name+" · 10 min",f.items,'m'],["Cool-down · 5 min",COOL,'c']];
+ const all=secs.flatMap(([,it,p])=>it.map((_,i)=>p+i)),n=all.filter(x=>d.r[x]).length;
+ const wk=[...Array(7)].map((_,i)=>{const dd=new Date();dd.setDate(dd.getDate()-(6-i));const kk=key(dd);return`<div class="dot ${isActive(kk)?'on':''} ${i===6?'today':''}">${'SMTWTFS'[dd.getDay()]}</div>`}).join('');
+ return`<div class="row"><h1>🥒 Dink Daily</h1><span class="mu">${new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</span></div>
+ <div class="hero" style="margin-top:14px"><div class="card"><div class="big">🔥 ${s.streak}</div><div class="mu">day streak</div></div>
+ <div class="card"><div class="big">Lv ${s.level}</div><div class="mu">${s.into}/150 XP</div><div class="bar"><i style="width:${s.into/1.5}%"></i></div></div></div>
+ <div class="card"><div class="week">${wk}</div><div class="mu" style="text-align:center;margin-top:8px">One rest day won't break your streak. Recovery counts at 50+.</div></div>
+ <h2>Today's 20-minute routine</h2>
+ ${secs.map(([t,it,p])=>`<div class="card"><b>${t}</b>${it.map(([a,b,c],i)=>`<label class="item ${d.r[p+i]?'done':''}" style="margin:0;font-weight:400"><input type="checkbox" ${d.r[p+i]?'checked':''} onchange="tick('${p+i}',this.checked)"><div><b>${a}</b> <span class="tag">${b}</span><div class="mu">${c}</div></div></label>`).join('')}</div>`).join('')}
+ <div class="card row"><div><b>${n}/${all.length} done</b><div class="mu">${d.done?'✅ Routine complete! +40 XP':'Check them off to finish'}</div></div><button class="ghost" onclick="go('drills')">Add a drill →</button></div>
+ <p class="mu">Tip: stop any move that causes sharp pain. See a doctor if it persists.</p>`;
+}
+window.tick=(id,v)=>{const d=day(key());d.r[id]=v;const total=WARM.length+COOL.length+focus().items.length;
+ if(Object.values(d.r).filter(Boolean).length===total&&!d.done){d.done=true;save();award(40,'🎉 Routine complete! +40 XP')}else save();render()};
+
+function vDrills(){
+ const d=day(key());
+ return`<h1>Drills</h1><div class="mu">Tap "Done" after each drill: +10 XP and counts toward your streak.</div>
+ <div class="chips">${CATS.map(c=>`<button class="chip ${cat===c?'on':''}" onclick="cat='${c}';render()">${c}</button>`).join('')}</div>
+ ${DRILLS.filter(x=>cat==='All'||x.cat===cat).map(x=>`<div class="card"><div class="row"><b>${x.name}</b><span class="tag">${x.cat} · ${x.t}</span></div><div style="margin-top:6px">${x.d}</div><div class="mu">💡 ${x.tip}</div>
+ <div style="margin-top:10px"><button ${d.dr.includes(x.id)?'disabled':''} onclick="drillDone('${x.id}')">${d.dr.includes(x.id)?'Done today ✓':'Mark done'}</button></div></div>`).join('')}`;
+}
+window.drillDone=id=>{const d=day(key());if(!d.dr.includes(id)){d.dr.push(id);save();award(10)}render()};
+
+function vLog(){
+ const stars=[1,2,3,4,5].map(i=>`<button class="${lg.rating>=i?'on':''}" onclick="lg.rating=${i};render()">★</button>`).join('');
+ return`<h1>Log a session</h1>
+ <div class="card"><div class="chips">${['Game','Drill session','Lesson'].map(t=>`<button class="chip ${lg.type===t?'on':''}" onclick="lg.type='${t}';render()">${t}</button>`).join('')}</div>
+ <label>How did it go?</label><div class="stars">${stars}</div>
+ <label>What went well</label><textarea id="well" placeholder="e.g. third-shot drops were landing soft"></textarea>
+ <label>What to work on</label><textarea id="imp" placeholder="e.g. too many errors on speed-ups"></textarea>
+ <div style="margin-top:12px"><button onclick="saveLog()">Save (+15 XP)</button></div></div>
+ <h2>History</h2>${S.logs.length?S.logs.slice().reverse().slice(0,30).map(l=>`<div class="card"><div class="row"><b>${esc(l.type)}</b><span class="mu">${l.date}</span></div><div style="color:var(--warn)">${'★'.repeat(l.rating)}${'☆'.repeat(5-l.rating)}</div>${l.well?`<div>👍 ${esc(l.well)}</div>`:''}${l.imp?`<div>🎯 ${esc(l.imp)}</div>`:''}</div>`).join(''):'<div class="mu">No entries yet.</div>'}`;
+}
+window.saveLog=()=>{if(!lg.rating){toast('Pick a star rating');return}
+ S.logs.push({date:key(),type:lg.type,rating:lg.rating,well:$('#well').value.trim(),imp:$('#imp').value.trim()});
+ day(key()).log=true;lg.rating=0;save();toast('Saved! +15 XP');render()};
+
+function vMe(){
+ const s=stats(),l=S.logs.slice(-10),avg=l.length?(l.reduce((a,x)=>a+x.rating,0)/l.length).toFixed(1):'–';
+ const imps=S.logs.filter(x=>x.imp).slice(-3).reverse();
+ return`<h1>Progress</h1>
+ <div class="hero" style="margin-top:14px"><div class="card"><div class="big">${s.streak}</div><div class="mu">current streak</div></div><div class="card"><div class="big">${s.best}</div><div class="mu">best streak</div></div></div>
+ <div class="hero" style="margin-top:12px"><div class="card"><div class="big">${s.active}</div><div class="mu">active days</div></div><div class="card"><div class="big">${avg}</div><div class="mu">avg rating (last 10)</div></div></div>
+ <h2>Badges</h2><div>${BADGES.map(([i,n,f])=>`<span class="badge ${f(s)?'':'off'}">${i} ${n}</span>`).join('')}</div>
+ <h2>Recent focus areas</h2>${imps.length?imps.map(x=>`<div class="card">🎯 ${esc(x.imp)}<div class="mu">${x.date}</div></div>`).join(''):'<div class="mu">Log a session to see your focus areas.</div>'}
+ <h2>Data</h2><div class="card"><div class="mu">Saved on this device. Back it up:</div><div style="margin-top:8px;display:flex;gap:8px"><button class="ghost" onclick="exp()">Export</button><button class="ghost" onclick="document.getElementById('imp').click()">Import</button><input id="imp" type="file" accept=".json" hidden onchange="imp(this.files[0])"></div></div>`;
+}
+window.exp=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='dink-daily-backup.json';a.click()};
+window.imp=f=>{if(!f)return;f.text().then(t=>{try{S=JSON.parse(t);save();toast('Imported');render()}catch(e){toast('Invalid file')}})};
+render();
+</script></body></html>
