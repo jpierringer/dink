@@ -187,7 +187,7 @@ function vStats(){
  const sore=S.logs.slice(-10).filter(l=>l.body==='Sore').length;
  // partner records
  const pr={};G.forEach(g=>{if(g.partner){const p=pr[g.partner]||(pr[g.partner]={w:0,l:0});isWin(g)?p.w++:p.l++}});
- const partners=Object.entries(pr).filter(([,v])=>v.w+v.l>=2).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).slice(0,5);
+ const partners=Object.entries(pr).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).slice(0,5);
  return`<h1>Stats</h1>
  <div class="hero"><div class="card"><div class="big">${G.length}</div><div class="mu">games logged</div></div><div class="card"><div class="big">${S.logs.length}</div><div class="mu">sessions logged</div></div></div>
  <div class="hero"><div class="card"><div class="big">${w}–${L}</div><div class="mu">win–loss${G.length?` · ${pct}`:''}</div></div><div class="card"><div class="big">${avg}${avg!=='–'?'<span style="font-size:18px;color:var(--warn)"> ★</span>':''}</div><div class="mu">avg session rating</div></div></div>
