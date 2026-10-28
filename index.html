@@ -10,6 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dink Daily">
 <meta name="theme-color" content="#2f8f3a">
+<meta name="app-version" content="v1.6 · Oct 28 · W/L ratio">
 <style>
 :root{--bg:#f6f7f2;--card:#fff;--tx:#1b2418;--mu:#6b7566;--ac:#2f8f3a;--ac2:#e8f4e5;--warn:#f08a1c;--bad:#c4452f;--bd:#e2e5dc}
 @media (prefers-color-scheme:dark){:root{--bg:#121510;--card:#1c211a;--tx:#eef2ea;--mu:#9aa595;--ac:#58c264;--ac2:#243322;--bad:#ee7a64;--bd:#2c3329}}
@@ -53,6 +54,7 @@ nav button.on{color:var(--ac)}nav span{display:block;font-size:22px}
 <nav id="nav"></nav>
 <script>
 const $=s=>document.querySelector(s);
+const VERSION=document.querySelector('meta[name=app-version]').content;
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const key=d=>{const x=d||new Date();return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
 let S={logs:[],games:[]};
@@ -82,8 +84,21 @@ window.go=t=>{tab=t;render();scrollTo(0,0)};
 function render(){
  $('#nav').innerHTML=[['log','✏️','Log'],['history','📖','History'],['stats','📈','Stats']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
  $('#app').innerHTML={log:vLog,history:vHistory,stats:vStats}[tab]();
+ $('#app').insertAdjacentHTML('beforeend',`<div class="mu" style="text-align:center;margin:28px 0 8px">Dink Daily ${esc(VERSION)}<br><button class="del" style="text-decoration:underline" onclick="chk()">Check for update</button></div>`);
  if(tab==='log'&&mode==='game')sug();
 }
+
+// ---- Version / update check ----
+// Fetches the live page bypassing the cache; if its version differs from what's running, reloads it.
+window.chk=async()=>{
+ try{
+  const r=await fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'});
+  const m=(await r.text()).match(/name="app-version" content="([^"]+)"/);
+  if(!m){toast("Couldn't check");return}
+  if(m[1]!==VERSION){toast('Updating to '+m[1].split(' · ')[0]+'…');setTimeout(()=>location.replace(location.pathname+'?_='+Date.now()),700)}
+  else toast("You're on the latest version")
+ }catch(e){toast('Offline?')}
+};
 
 // ---- Name suggestions (tappable chips; more reliable than <datalist> on iPhone) ----
 const fieldsFor=()=>gm.fmt==='Doubles'?['partner','o1','o2']:['o1'];
