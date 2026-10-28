@@ -51,7 +51,6 @@ nav button.on{color:var(--ac)}nav span{display:block;font-size:22px}
 </style></head><body>
 <main id="app"></main>
 <nav id="nav"></nav>
-<datalist id="names"></datalist>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -81,9 +80,31 @@ window.go=t=>{tab=t;render();scrollTo(0,0)};
 function render(){
  $('#nav').innerHTML=[['log','✏️','Log'],['history','📖','History'],['stats','📈','Stats']].map(([k,i,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
  $('#app').innerHTML={log:vLog,history:vHistory,stats:vStats}[tab]();
- const names=new Set();S.games.forEach(g=>[g.partner,g.o1,g.o2].forEach(n=>n&&names.add(n)));
- $('#names').innerHTML=[...names].sort().map(n=>`<option value="${esc(n)}">`).join('');
+ if(tab==='log'&&mode==='game')sug();
 }
+
+// ---- Name suggestions (tappable chips; more reliable than <datalist> on iPhone) ----
+const fieldsFor=()=>gm.fmt==='Doubles'?['partner','o1','o2']:['o1'];
+const fieldLabel=k=>k==='partner'?'partner':(gm.fmt==='Doubles'?(k==='o1'?'opponent 1':'opponent 2'):'opponent');
+function activeField(){const f=fieldsFor();return f.includes(gm.f)?gm.f:(f.find(k=>!gm[k].trim())||f[0])}
+function sug(){
+ const el=$('#sug');if(!el)return;
+ const f=activeField(),cnt={};
+ S.games.forEach(g=>[g.partner,g.o1,g.o2].forEach(n=>n&&(cnt[n]=(cnt[n]||0)+1)));
+ const used=fieldsFor().filter(k=>k!==f).map(k=>gm[k].trim().toLowerCase());
+ const q=gm[f].trim().toLowerCase();
+ const list=Object.keys(cnt).filter(n=>{const l=n.toLowerCase();return !used.includes(l)&&l!==q&&l.includes(q)})
+  .sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b)).slice(0,8);
+ el.innerHTML=list.length?`<span class="mu" style="width:100%">Tap to fill ${fieldLabel(f)}:</span>`+list.map(n=>`<button class="chip" data-n="${esc(n)}" onclick="pick(this.dataset.n)">${esc(n)}</button>`).join(''):'';
+}
+window.pick=n=>{
+ const f=activeField();gm[f]=n;
+ const inp=document.getElementById('in_'+f);if(inp)inp.value=n;
+ const next=fieldsFor().find(k=>!gm[k].trim());
+ gm.f=next||f;
+ if(next){const ni=document.getElementById('in_'+next);if(ni)ni.focus()}
+ sug();
+};
 
 // ---- Log ----
 function vLog(){
@@ -98,7 +119,7 @@ function vLog(){
 
 function fGame(){
  const dbl=gm.fmt==='Doubles';
- const nm=(id,k,ph)=>`<input type="text" list="names" placeholder="${ph}" value="${esc(gm[k])}" oninput="gm.${k}=this.value" autocapitalize="words" autocomplete="off">`;
+ const nm=(id,k,ph)=>`<input type="text" id="in_${k}" placeholder="${ph}" value="${esc(gm[k])}" onfocus="gm.f='${k}';sug()" oninput="gm.${k}=this.value;sug()" autocapitalize="words" autocomplete="off" autocorrect="off">`;
  return`<div class="card">
  <div class="chips">${['Doubles','Singles'].map(f=>`<button class="chip ${gm.fmt===f?'on':''}" onclick="gm.fmt='${f}';render()">${f}</button>`).join('')}</div>
  <label>Who played?</label>
@@ -107,6 +128,7 @@ function fGame(){
   ${nm('o1','o1',dbl?'Opponent 1':'Opponent')}
   ${dbl?nm('o2','o2','Opponent 2'):''}
  </div>
+ <div id="sug" class="chips" style="margin-top:8px"></div>
  <label>Score</label>
  <div class="score"><div style="flex:1"><div class="mu" style="text-align:center">Us</div><input type="number" inputmode="numeric" min="0" value="${esc(gm.me)}" oninput="gm.me=this.value"></div><span>–</span><div style="flex:1"><div class="mu" style="text-align:center">Them</div><input type="number" inputmode="numeric" min="0" value="${esc(gm.them)}" oninput="gm.them=this.value"></div></div>
  <label>Note <span class="mu" style="font-weight:400">(optional)</span></label>
