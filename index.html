@@ -75,6 +75,8 @@ const freshS=()=>({type:'Practice',rating:0,tags:[],body:'',well:'',imp:'',date:
 const freshG=()=>({fmt:'Doubles',partner:'',o1:'',o2:'',me:'',them:'',note:'',date:key()});
 let ss=freshS(),gm=freshG();
 const isWin=g=>g.me>g.them;
+// K/D-style ratio: wins ÷ losses (with no losses yet, it's just the win count)
+const ratioOf=(w,l)=>(l?w/l:w).toFixed(2);
 window.go=t=>{tab=t;render();scrollTo(0,0)};
 
 function render(){
@@ -199,7 +201,7 @@ function cSess(l){
 // ---- Stats ----
 function vStats(){
  const G=S.games,w=G.filter(isWin).length,L=G.length-w;
- const pct=G.length?Math.round(w/G.length*100)+'%':'–';
+ const ratio=G.length?ratioOf(w,L):'–';
  const last10=G.slice(-10),w10=last10.filter(isWin).length;
  const avg=S.logs.length?(S.logs.reduce((a,x)=>a+x.rating,0)/S.logs.length).toFixed(1):'–';
  const trend=S.logs.slice(-10);
@@ -212,9 +214,9 @@ function vStats(){
  const partners=Object.entries(pr).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)||a[0].localeCompare(b[0]));
  return`<h1>Stats</h1>
  <div class="hero"><div class="card"><div class="big">${G.length}</div><div class="mu">games logged</div></div><div class="card"><div class="big">${S.logs.length}</div><div class="mu">sessions logged</div></div></div>
- <div class="hero"><div class="card"><div class="big">${w}–${L}</div><div class="mu">win–loss${G.length?` · ${pct}`:''}</div></div><div class="card"><div class="big">${avg}${avg!=='–'?'<span style="font-size:18px;color:var(--warn)"> ★</span>':''}</div><div class="mu">avg session rating</div></div></div>
+ <div class="hero"><div class="card"><div class="big">${ratio}</div><div class="mu">W/L ratio${G.length?` · ${w}–${L}`:''}</div></div><div class="card"><div class="big">${avg}${avg!=='–'?'<span style="font-size:18px;color:var(--warn)"> ★</span>':''}</div><div class="mu">avg session rating</div></div></div>
  ${last10.length>1?`<div class="card"><b>Last ${last10.length} games:</b> ${w10}–${last10.length-w10}<div style="margin-top:8px">${last10.map(g=>`<span class="res ${isWin(g)?'w':'l'}" style="display:inline-block;font-size:16px">${isWin(g)?'W':'L'}</span>`).join('')}</div></div>`:''}
- ${partners.length?`<h2>Partners</h2><div class="card">${partners.map(([n,v])=>`<div class="row" style="padding:3px 0"><span>${esc(n)}</span><b>${v.w}–${v.l}</b></div>`).join('')}</div>`:''}
+ ${partners.length?`<h2>Partners</h2><div class="card">${partners.map(([n,v])=>`<div class="row" style="padding:3px 0"><span>${esc(n)}</span><span><b>${v.w}–${v.l}</b> <span class="mu">· ${ratioOf(v.w,v.l)}</span></span></div>`).join('')}</div>`:''}
  ${trend.length>1?`<div class="card"><b>Session rating trend</b><div class="bars">${trend.map(l=>`<div style="height:${l.rating*20}%" title="${l.date}"></div>`).join('')}</div><div class="mu">Last ${trend.length} sessions</div></div>`:''}
  ${top.length?`<h2>Most frequent focus areas</h2><div class="card">${top.map(([t,c])=>`<span class="tag">${esc(t)} · ${c}</span>`).join('')}<div class="mu" style="margin-top:6px">From your last 20 sessions.</div></div>`:''}
  ${sore>=3?`<div class="card">⚠️ You've felt sore in ${sore} of your last ${Math.min(10,S.logs.length)} sessions. Consider an extra rest day or easing off the intensity.</div>`:''}
