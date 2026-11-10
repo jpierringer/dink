@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dink Daily">
 <meta name="theme-color" content="#2f8f3a">
-<meta name="app-version" content="v1.6 · Oct 28 · W/L ratio">
+<meta name="app-version" content="v1.7 · Nov 9 · Daily tip">
 <style>
 :root{--bg:#f6f7f2;--card:#fff;--tx:#1b2418;--mu:#6b7566;--ac:#2f8f3a;--ac2:#e8f4e5;--warn:#f08a1c;--bad:#c4452f;--bd:#e2e5dc}
 @media (prefers-color-scheme:dark){:root{--bg:#121510;--card:#1c211a;--tx:#eef2ea;--mu:#9aa595;--ac:#58c264;--ac2:#243322;--bad:#ee7a64;--bd:#2c3329}}
@@ -123,6 +123,39 @@ window.pick=n=>{
  sug();
 };
 
+// ---- Tip of the day ----
+// One tip per day, tied to the focus areas you've been tagging in recent sessions.
+const TIPS={
+ Dinks:["Aim your dink to land just over the net, then drop below the tape. Low and boring beats fancy.","Dink cross-court more often than straight ahead: the net is lower in the middle and the angle gives you a longer, safer path.","Keep your paddle face open and use a short, soft push. Think of 'catching' the ball and setting it down on their side.","Let the ball come to you, bend at the knees (not the waist) and contact it out in front of your body.","Mix in a dink to the opponent's backhand. A steady diet of those forces more pop-ups."],
+ Drops:["On the third-shot drop, aim for the middle of the kitchen with an arc that peaks on your side of the net. You want it to land softly, not skim over.","Use your legs, not your wrist. Bend, brush the ball up with a smooth, low-to-high swing and finish with the paddle out front.","After you drop, move forward right away. Split-step at the kitchen line before they hit their next shot.","If your drop keeps going long, shorten the backswing and slow your swing instead of trying to aim harder.","A drop that lands at their feet beats one that lands deep in the kitchen. Practice both and notice which opponents struggle with which."],
+ Serve:["Serve deep. Aim for the last 3 feet of the court and make the returner start from behind the baseline.","Make your serve a consistent routine: same bounce, same breath, same target. Consistency beats pace.","Vary the spot, not the swing. Go to the backhand, then middle, then forehand to keep returners guessing.","Follow through toward your target, not across your body. It keeps the ball from sailing wide.","Serve to the player's body now and then. It jams them and it's much harder to hit a good return."],
+ Return:["Return deep, ideally past the midpoint of their court. It buys you time to get to the kitchen line.","Get a step inside the baseline before they hit your return, then split-step as they make contact.","Keep the return simple: a short backswing and a firm, smooth push down the middle.","Move forward immediately after your return. Don't stop at the baseline and admire it.","Aim your return to the server's weaker side, especially the backhand, and watch how they respond."],
+ Volleys:["Keep your paddle up and out in front, with the paddle head above your wrist, ready to punch.","Short punch, not a swing. Let the ball's pace do the work, especially when blocking hard shots.","Volley the ball back to the middle when you're unsure. It keeps both opponents in play and reduces your risk.","Watch the ball into your paddle. Many volley errors come from looking at the opponent or the target too soon.","If the ball is below the net, soften and lift. If it's above, firm up and angle down."],
+ Resets:["When they speed up to you, relax your grip a little and let the paddle absorb the pace. Aim for the kitchen.","Block, don't swing. Open the paddle face slightly and use your knees to lower the contact.","A good reset lands at their feet and slows the point down. Don't try to win from a defensive position.","Practice 'hard-to-soft' with a partner: they hit firm to your body and you drop it into the kitchen.","Keep your paddle in front of your chest in the ready position. A lot of resets are lost because the paddle starts behind you."],
+ Footwork:["Split-step each time your opponent hits. Landing balanced makes every step afterward quicker.","Move with small, quick shuffle steps and don't cross your feet. It keeps you balanced and ready to hit.","After every shot, recover to the ready position with the paddle up and knees bent before you worry about the next ball.","Work on the 'move together' habit: stay roughly even with your partner as you step forward or back.","Try a few light split-step hops and side shuffles before play. Gentle, controlled ones make a good 50+ warm-up and protect the calves."],
+ Strategy:["Aim at the middle more often. It creates confusion between opponents and removes their best angles.","Find the weaker player and target them until they prove otherwise. Don't change what's working.","Be patient in dink rallies. Wait for a high ball, then attack. Don't force a speed-up from a low one.","Take notes from the last game: which shot won you the most points? Do more of that tonight.","Get to the kitchen line with your partner as soon as you can. Most points are won up there."],
+ Patience:["Make the opponent hit one more ball than they'd like. Many points are won by simply staying in the rally.","Set a rule for yourself: no speed-ups unless the ball is above the net.","If you notice yourself rushing, take a breath between points and reset your focus on the next shot.","Count your unforced errors tonight rather than your winners. The fewer you have, the better you're playing.","Treat dink rallies like a conversation. You're setting up the point, not trying to end it on the first shot."],
+ Communication:["Use short calls: 'mine', 'yours', 'bounce', 'switch'. Say them early and loudly.","Agree before the game on who takes the middle. Forehand in the middle is a common rule.","Check in with your partner between games with one positive point and one adjustment. Keep it brief.","Tell your partner when you're going to poach or switch. A quick 'I'm going' avoids collisions and gaps.","Encourage your partner after a miss. A quick 'next one' keeps the energy up and the errors down."]
+};
+const GENERAL=["Warm up for 5 minutes before you play: easy movement, hip and ankle circles and a few light split-steps. It's a good investment at 50+.","Hydrate before you're thirsty, especially in long sessions. Cramps and fatigue sneak up faster than you'd think.","Log your session while it's fresh. One good, specific note is worth more than a long vague one.","Focus on one thing tonight. Pick a single habit, like split-stepping or hitting deep returns, and give it your full attention.","Stretch your calves, hips and shoulders afterward. Recovery is part of the game."];
+const dayNum=()=>Math.floor(new Date(key()+'T12:00')/864e5);
+function focusRank(){
+ // recent sessions count more than older ones
+ const sc={};
+ S.logs.slice(-10).reverse().forEach((l,i)=>(l.tags||[]).forEach(t=>{if(TIPS[t])sc[t]=(sc[t]||0)+(10-i)}));
+ return Object.keys(sc).sort((a,b)=>sc[b]-sc[a]||a.localeCompare(b));
+}
+function todaysTip(){
+ const top=focusRank().slice(0,3),d=dayNum();
+ if(!top.length)return{tag:null,text:GENERAL[d%GENERAL.length]};
+ const f=top[d%top.length],list=TIPS[f];
+ return{tag:f,text:list[Math.floor(d/top.length)%list.length]};
+}
+function tipCard(){
+ const t=todaysTip();
+ return`<div class="card" style="margin-top:16px;background:var(--ac2);border-color:transparent"><div class="row"><b>💡 Tip of the day</b>${t.tag?`<span class="tag" style="background:var(--card)">${esc(t.tag)}</span>`:''}</div><div style="margin-top:6px">${esc(t.text)}</div>${t.tag?'':`<div class="mu" style="margin-top:6px">Tag focus areas when you log a session and your daily tip will target them.</div>`}</div>`;
+}
+
 // ---- Log ----
 function vLog(){
  const g=S.games,w=g.filter(isWin).length;
@@ -130,6 +163,7 @@ function vLog(){
  <div class="hero"><div class="card"><div class="big">${g.length}</div><div class="mu">games</div></div>
  <div class="card"><div class="big">${w}–${g.length-w}</div><div class="mu">record</div></div>
  <div class="card"><div class="big">${S.logs.length}</div><div class="mu">sessions</div></div></div>
+ ${tipCard()}
  <div class="seg" style="margin-top:16px"><button class="${mode==='game'?'on':''}" onclick="mode='game';render()">🏓 Game</button><button class="${mode==='session'?'on':''}" onclick="mode='session';render()">📝 Session</button></div>
  ${mode==='game'?fGame():fSession()}`;
 }
